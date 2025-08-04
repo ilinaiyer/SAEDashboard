@@ -126,6 +126,27 @@ def to_resid_direction(
         model:
             The model, which should be a HookedTransformerWrapper or similar.
     """
+    hook = model.activation_config.primary_hook_point
+
+    if "resid" in hook or "_out" in hook:
+        return direction  # Already in residual stream
+
+    elif "pre" in hook or "post" in hook:
+        return direction @ model.W_out[model.hook_layer]
+
+    elif "hook_z" in hook:
+        # shape: (n_heads, d_head, d_model) → flatten(0, 1): (n_heads * d_head, d_model)
+        return direction @ model.W_O[model.hook_layer].flatten(0, 1).to(direction.dtype)
+
+    elif "hook_q" in hook or "hook_k" in hook:
+        # No natural projection to residual stream; return unchanged (optionally raise warning)
+        print(f"Warning: Cannot project activations from {hook} to residual stream. Returning unprojected directions.")
+        return direction
+
+    else:
+        raise NotImplementedError(
+            f"The hook point '{hook}' is not supported for projection into the residual stream."
+        )
     # If this SAE was trained on the residual stream or attn/mlp out, then we don't need to do anything
     if (
         "resid" in model.activation_config.primary_hook_point
