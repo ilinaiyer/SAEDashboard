@@ -161,7 +161,12 @@ def to_resid_direction(
         return direction @ model.W_out[model.hook_layer]
 
     elif "hook_z" in model.activation_config.primary_hook_point:
-        return direction @ model.W_O[model.hook_layer].flatten(0, 1).to(direction.dtype)
+    # Only use one head; choose the one your SAE was trained on
+        head_index = 0  # CHANGE this if needed
+        W_O_head = model.W_O[model.hook_layer][head_index]  # shape: [d_head, d_model]
+    
+        return direction @ W_O_head.to(direction.dtype)  # [feats, d_head] x [d_head, d_model] = [feats, d_model]
+
 
     # Others not yet supported
     else:
