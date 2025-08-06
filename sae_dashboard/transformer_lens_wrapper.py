@@ -140,7 +140,8 @@ def to_resid_direction(
 
         if direction.shape == (64,64):
             direction = direction.repeat(n_heads,1)
-        return direction @ W_0.flatten(0,1).to(direction.dtype)
+        return direction @ W_0[hook_head_index]
+        #return direction @ W_0.flatten(0,1).to(direction.dtype)
         # shape: (n_heads, d_head, d_model) → flatten(0, 1): (n_heads * d_head, d_model)
 
     elif "hook_q" in hook or "hook_k" in hook:

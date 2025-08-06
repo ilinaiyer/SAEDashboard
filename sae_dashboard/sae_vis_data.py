@@ -32,6 +32,7 @@ OUT_OF_RANGE_TOKEN = "<|outofrange|>"
 @dataclass
 class SaeVisConfig:
     # Data
+    hook_head_index: int
     hook_point: str
     features: Iterable[int]
     minibatch_size_features: int = 256
