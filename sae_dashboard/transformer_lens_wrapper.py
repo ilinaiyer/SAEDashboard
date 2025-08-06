@@ -135,8 +135,13 @@ def to_resid_direction(
         return direction @ model.W_out[model.hook_layer]
 
     elif "hook_z" in hook:
+        W_0 = model.W_0[model.hook_layer]
+        n_heads, d_heads, d_model = W_0.shape
+
+        if direction.shape == (64,64):
+            direction = direction.repeat(n_heads,1)
+        return direction @ W_0.flatten(0,1).to(direction.dtype)
         # shape: (n_heads, d_head, d_model) → flatten(0, 1): (n_heads * d_head, d_model)
-        return direction @ model.W_O[model.hook_layer].flatten(0, 1).to(direction.dtype)
 
     elif "hook_q" in hook or "hook_k" in hook:
         # No natural projection to residual stream; return unchanged (optionally raise warning)
@@ -160,18 +165,13 @@ def to_resid_direction(
     ):
         return direction @ model.W_out[model.hook_layer]
 
-    #elif "hook_z" in model.activation_config.primary_hook_point:
-    # Only use one head; choose the one your SAE was trained on
-    #    head_index = 0  # CHANGE this if needed
-    #    W_O_head = model.W_O[model.hook_layer][head_index]  # shape: [d_head, d_model]
-    
-    #    return direction @ W_O_head.to(direction.dtype)  # [feats, d_head] x [d_head, d_model] = [feats, d_model]
     elif "hook_z" in model.activation_config.primary_hook_point:
     # Only use one head; choose the one your SAE was trained on
         head_index = 0  # CHANGE this if needed
         W_O_head = model.W_O[model.hook_layer][head_index]  # shape: [d_head, d_model]
 
         return direction @ W_O_head.to(direction.dtype)
+    
   
 
 
